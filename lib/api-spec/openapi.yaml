@@ -1,0 +1,1392 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: SIHIYAN - SIHI Seeds AI Operations Platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: stock
+    description: Stock management operations
+  - name: dispatch
+    description: Dispatch tracking operations
+  - name: inventory
+    description: Inventory management operations
+  - name: reports
+    description: AI-generated reports and analytics
+  - name: ocr
+    description: OCR bill scanning operations
+  - name: dashboard
+    description: Dashboard analytics and summaries
+  - name: gemini
+    description: Gemini AI chat and image operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ─── STOCK MANAGEMENT ────────────────────────────────────────────────────────
+  /stock:
+    get:
+      operationId: listStockItems
+      tags: [stock]
+      summary: List all stock items
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: lowStock
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of stock items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StockItem"
+    post:
+      operationId: createStockItem
+      tags: [stock]
+      summary: Create a new stock item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockItemInput"
+      responses:
+        "201":
+          description: Created stock item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockItem"
+  /stock/summary:
+    get:
+      operationId: getStockSummary
+      tags: [stock]
+      summary: Get stock summary statistics
+      responses:
+        "200":
+          description: Stock summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockSummary"
+  /stock/categories:
+    get:
+      operationId: listStockCategories
+      tags: [stock]
+      summary: List all stock categories with counts
+      responses:
+        "200":
+          description: Category breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryCount"
+  /stock/{id}:
+    get:
+      operationId: getStockItem
+      tags: [stock]
+      summary: Get a stock item by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Stock item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockItem"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    patch:
+      operationId: updateStockItem
+      tags: [stock]
+      summary: Update a stock item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockItemUpdate"
+      responses:
+        "200":
+          description: Updated stock item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockItem"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteStockItem
+      tags: [stock]
+      summary: Delete a stock item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /stock/{id}/adjust:
+    post:
+      operationId: adjustStockQuantity
+      tags: [stock]
+      summary: Adjust stock quantity (add or subtract)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockAdjustInput"
+      responses:
+        "200":
+          description: Updated stock item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockItem"
+
+  # ─── DISPATCH MANAGEMENT ─────────────────────────────────────────────────────
+  /dispatch:
+    get:
+      operationId: listDispatches
+      tags: [dispatch]
+      summary: List all dispatches
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of dispatches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dispatch"
+    post:
+      operationId: createDispatch
+      tags: [dispatch]
+      summary: Create a new dispatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DispatchInput"
+      responses:
+        "201":
+          description: Created dispatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dispatch"
+  /dispatch/summary:
+    get:
+      operationId: getDispatchSummary
+      tags: [dispatch]
+      summary: Get dispatch summary and pipeline stats
+      responses:
+        "200":
+          description: Dispatch summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DispatchSummary"
+  /dispatch/recent:
+    get:
+      operationId: getRecentDispatches
+      tags: [dispatch]
+      summary: Get recent dispatch activity
+      responses:
+        "200":
+          description: Recent dispatches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dispatch"
+  /dispatch/{id}:
+    get:
+      operationId: getDispatch
+      tags: [dispatch]
+      summary: Get a dispatch by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dispatch details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dispatch"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    patch:
+      operationId: updateDispatch
+      tags: [dispatch]
+      summary: Update a dispatch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DispatchUpdate"
+      responses:
+        "200":
+          description: Updated dispatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dispatch"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteDispatch
+      tags: [dispatch]
+      summary: Delete a dispatch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+  /dispatch/{id}/status:
+    patch:
+      operationId: updateDispatchStatus
+      tags: [dispatch]
+      summary: Update dispatch status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DispatchStatusUpdate"
+      responses:
+        "200":
+          description: Updated dispatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dispatch"
+
+  # ─── INVENTORY / WAREHOUSE ───────────────────────────────────────────────────
+  /inventory:
+    get:
+      operationId: listInventoryItems
+      tags: [inventory]
+      summary: List all inventory records
+      parameters:
+        - name: warehouseId
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Inventory list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+    post:
+      operationId: createInventoryItem
+      tags: [inventory]
+      summary: Add inventory record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryItemInput"
+      responses:
+        "201":
+          description: Created inventory item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+  /inventory/warehouses:
+    get:
+      operationId: listWarehouses
+      tags: [inventory]
+      summary: List all warehouses
+      responses:
+        "200":
+          description: Warehouses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Warehouse"
+    post:
+      operationId: createWarehouse
+      tags: [inventory]
+      summary: Create a warehouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WarehouseInput"
+      responses:
+        "201":
+          description: Created warehouse
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Warehouse"
+  /inventory/{id}:
+    patch:
+      operationId: updateInventoryItem
+      tags: [inventory]
+      summary: Update inventory record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryItemUpdate"
+      responses:
+        "200":
+          description: Updated item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+    delete:
+      operationId: deleteInventoryItem
+      tags: [inventory]
+      summary: Delete inventory record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── DASHBOARD ANALYTICS ─────────────────────────────────────────────────────
+  /dashboard/overview:
+    get:
+      operationId: getDashboardOverview
+      tags: [dashboard]
+      summary: Get dashboard KPI overview
+      responses:
+        "200":
+          description: Dashboard overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardOverview"
+  /dashboard/activity:
+    get:
+      operationId: getDashboardActivity
+      tags: [dashboard]
+      summary: Get recent activity feed
+      responses:
+        "200":
+          description: Activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+  /dashboard/trends:
+    get:
+      operationId: getDashboardTrends
+      tags: [dashboard]
+      summary: Get stock and dispatch trends over time
+      parameters:
+        - name: days
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Trend data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrendData"
+
+  # ─── REPORTS ──────────────────────────────────────────────────────────────────
+  /reports/daily:
+    get:
+      operationId: listDailyReports
+      tags: [reports]
+      summary: List all daily AI reports
+      responses:
+        "200":
+          description: Daily reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DailyReport"
+    post:
+      operationId: generateDailyReport
+      tags: [reports]
+      summary: Generate a new AI daily summary report
+      responses:
+        "201":
+          description: Generated report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyReport"
+  /reports/daily/{id}:
+    get:
+      operationId: getDailyReport
+      tags: [reports]
+      summary: Get a specific daily report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Daily report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyReport"
+
+  # ─── OCR BILL SCANNING ───────────────────────────────────────────────────────
+  /ocr/scan:
+    post:
+      operationId: scanBill
+      tags: [ocr]
+      summary: Scan and parse a bill image via OCR
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OcrScanInput"
+      responses:
+        "200":
+          description: Parsed bill data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OcrScanResult"
+  /ocr/bills:
+    get:
+      operationId: listScannedBills
+      tags: [ocr]
+      summary: List all scanned bills
+      responses:
+        "200":
+          description: Scanned bills
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScannedBill"
+
+  # ─── GEMINI AI ────────────────────────────────────────────────────────────────
+  /gemini/conversations:
+    get:
+      operationId: listGeminiConversations
+      tags: [gemini]
+      summary: List all conversations
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GeminiConversation"
+    post:
+      operationId: createGeminiConversation
+      tags: [gemini]
+      summary: Create a new conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeminiConversationInput"
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeminiConversation"
+  /gemini/conversations/{id}:
+    get:
+      operationId: getGeminiConversation
+      tags: [gemini]
+      summary: Get conversation with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeminiConversationWithMessages"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeminiError"
+    delete:
+      operationId: deleteGeminiConversation
+      tags: [gemini]
+      summary: Delete a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+  /gemini/conversations/{id}/messages:
+    get:
+      operationId: listGeminiMessages
+      tags: [gemini]
+      summary: List messages in a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GeminiMessage"
+    post:
+      operationId: sendGeminiMessage
+      tags: [gemini]
+      summary: Send a message and receive an AI response (SSE stream)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeminiMessageInput"
+      responses:
+        "200":
+          description: SSE stream of assistant response chunks
+          content:
+            text/event-stream: {}
+  /gemini/generate-image:
+    post:
+      operationId: generateGeminiImage
+      tags: [gemini]
+      summary: Generate an image from a text prompt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeminiImageInput"
+      responses:
+        "200":
+          description: Generated image data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeminiImageOutput"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    # ─── STOCK ──────────────────────────────────────────────────────────────────
+    StockItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+        minQuantity:
+          type: number
+        maxQuantity:
+          type: ["number", "null"]
+        unitPrice:
+          type: ["number", "null"]
+        supplier:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - category
+        - sku
+        - quantity
+        - unit
+        - minQuantity
+        - createdAt
+        - updatedAt
+    StockItemInput:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+        minQuantity:
+          type: number
+        maxQuantity:
+          type: ["number", "null"]
+        unitPrice:
+          type: ["number", "null"]
+        supplier:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+      required:
+        - name
+        - category
+        - sku
+        - quantity
+        - unit
+        - minQuantity
+    StockItemUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+        minQuantity:
+          type: number
+        maxQuantity:
+          type: ["number", "null"]
+        unitPrice:
+          type: ["number", "null"]
+        supplier:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+    StockAdjustInput:
+      type: object
+      properties:
+        delta:
+          type: number
+        reason:
+          type: string
+      required:
+        - delta
+        - reason
+    StockSummary:
+      type: object
+      properties:
+        totalItems:
+          type: integer
+        totalValue:
+          type: number
+        lowStockCount:
+          type: integer
+        outOfStockCount:
+          type: integer
+        categoriesCount:
+          type: integer
+      required:
+        - totalItems
+        - totalValue
+        - lowStockCount
+        - outOfStockCount
+        - categoriesCount
+    CategoryCount:
+      type: object
+      properties:
+        category:
+          type: string
+        count:
+          type: integer
+        totalQuantity:
+          type: number
+      required:
+        - category
+        - count
+        - totalQuantity
+
+    # ─── DISPATCH ────────────────────────────────────────────────────────────────
+    Dispatch:
+      type: object
+      properties:
+        id:
+          type: integer
+        trackingNumber:
+          type: string
+        customerName:
+          type: string
+        customerPhone:
+          type: ["string", "null"]
+        destination:
+          type: string
+        status:
+          type: string
+        items:
+          type: string
+        totalWeight:
+          type: ["number", "null"]
+        totalValue:
+          type: ["number", "null"]
+        dispatchDate:
+          type: ["string", "null"]
+          format: date-time
+        expectedDelivery:
+          type: ["string", "null"]
+          format: date-time
+        deliveredAt:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: ["string", "null"]
+        driver:
+          type: ["string", "null"]
+        vehicle:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - trackingNumber
+        - customerName
+        - destination
+        - status
+        - items
+        - createdAt
+        - updatedAt
+    DispatchInput:
+      type: object
+      properties:
+        customerName:
+          type: string
+        customerPhone:
+          type: ["string", "null"]
+        destination:
+          type: string
+        items:
+          type: string
+        totalWeight:
+          type: ["number", "null"]
+        totalValue:
+          type: ["number", "null"]
+        dispatchDate:
+          type: ["string", "null"]
+          format: date-time
+        expectedDelivery:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: ["string", "null"]
+        driver:
+          type: ["string", "null"]
+        vehicle:
+          type: ["string", "null"]
+      required:
+        - customerName
+        - destination
+        - items
+    DispatchUpdate:
+      type: object
+      properties:
+        customerName:
+          type: string
+        customerPhone:
+          type: ["string", "null"]
+        destination:
+          type: string
+        items:
+          type: string
+        totalWeight:
+          type: ["number", "null"]
+        totalValue:
+          type: ["number", "null"]
+        dispatchDate:
+          type: ["string", "null"]
+          format: date-time
+        expectedDelivery:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: ["string", "null"]
+        driver:
+          type: ["string", "null"]
+        vehicle:
+          type: ["string", "null"]
+    DispatchStatusUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+        notes:
+          type: ["string", "null"]
+      required:
+        - status
+    DispatchSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+        pending:
+          type: integer
+        inTransit:
+          type: integer
+        delivered:
+          type: integer
+        cancelled:
+          type: integer
+        todayDispatches:
+          type: integer
+        totalValueInTransit:
+          type: number
+      required:
+        - total
+        - pending
+        - inTransit
+        - delivered
+        - cancelled
+        - todayDispatches
+        - totalValueInTransit
+
+    # ─── INVENTORY ───────────────────────────────────────────────────────────────
+    Warehouse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        location:
+          type: string
+        capacity:
+          type: ["number", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - location
+        - createdAt
+    WarehouseInput:
+      type: object
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        capacity:
+          type: ["number", "null"]
+        notes:
+          type: ["string", "null"]
+      required:
+        - name
+        - location
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        stockItemId:
+          type: integer
+        warehouseId:
+          type: integer
+        quantity:
+          type: number
+        batchNumber:
+          type: ["string", "null"]
+        expiryDate:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: ["string", "null"]
+        stockItemName:
+          type: ["string", "null"]
+        warehouseName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - stockItemId
+        - warehouseId
+        - quantity
+        - createdAt
+        - updatedAt
+    InventoryItemInput:
+      type: object
+      properties:
+        stockItemId:
+          type: integer
+        warehouseId:
+          type: integer
+        quantity:
+          type: number
+        batchNumber:
+          type: ["string", "null"]
+        expiryDate:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: ["string", "null"]
+      required:
+        - stockItemId
+        - warehouseId
+        - quantity
+    InventoryItemUpdate:
+      type: object
+      properties:
+        quantity:
+          type: number
+        batchNumber:
+          type: ["string", "null"]
+        expiryDate:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: ["string", "null"]
+
+    # ─── DASHBOARD ───────────────────────────────────────────────────────────────
+    DashboardOverview:
+      type: object
+      properties:
+        totalStockItems:
+          type: integer
+        lowStockAlerts:
+          type: integer
+        activeDispatches:
+          type: integer
+        todayDispatches:
+          type: integer
+        totalInventoryValue:
+          type: number
+        pendingBills:
+          type: integer
+        recentReportDate:
+          type: ["string", "null"]
+      required:
+        - totalStockItems
+        - lowStockAlerts
+        - activeDispatches
+        - todayDispatches
+        - totalInventoryValue
+        - pendingBills
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          type: ["string", "null"]
+      required:
+        - id
+        - type
+        - description
+        - timestamp
+    TrendData:
+      type: object
+      properties:
+        stockTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendPoint"
+        dispatchTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendPoint"
+      required:
+        - stockTrend
+        - dispatchTrend
+    TrendPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        value:
+          type: number
+      required:
+        - date
+        - value
+
+    # ─── REPORTS ────────────────────────────────────────────────────────────────
+    DailyReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        reportDate:
+          type: string
+          format: date-time
+        summary:
+          type: string
+        stockInsights:
+          type: ["string", "null"]
+        dispatchInsights:
+          type: ["string", "null"]
+        recommendations:
+          type: ["string", "null"]
+        generatedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - reportDate
+        - summary
+        - generatedBy
+        - createdAt
+
+    # ─── OCR ────────────────────────────────────────────────────────────────────
+    OcrScanInput:
+      type: object
+      properties:
+        imageBase64:
+          type: string
+        billType:
+          type: ["string", "null"]
+      required:
+        - imageBase64
+    OcrScanResult:
+      type: object
+      properties:
+        rawText:
+          type: string
+        parsedData:
+          type: string
+        confidence:
+          type: number
+        billId:
+          type: ["integer", "null"]
+      required:
+        - rawText
+        - parsedData
+        - confidence
+    ScannedBill:
+      type: object
+      properties:
+        id:
+          type: integer
+        rawText:
+          type: string
+        parsedData:
+          type: ["string", "null"]
+        billType:
+          type: ["string", "null"]
+        vendorName:
+          type: ["string", "null"]
+        billAmount:
+          type: ["number", "null"]
+        billDate:
+          type: ["string", "null"]
+          format: date-time
+        confidence:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - rawText
+        - confidence
+        - createdAt
+
+    # ─── GEMINI ─────────────────────────────────────────────────────────────────
+    GeminiConversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - createdAt
+    GeminiMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        role:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - conversationId
+        - role
+        - content
+        - createdAt
+    GeminiConversationInput:
+      type: object
+      properties:
+        title:
+          type: string
+      required:
+        - title
+    GeminiMessageInput:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+    GeminiConversationWithMessages:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/GeminiMessage"
+      required:
+        - id
+        - title
+        - createdAt
+        - messages
+    GeminiImageInput:
+      type: object
+      properties:
+        prompt:
+          type: string
+      required:
+        - prompt
+    GeminiImageOutput:
+      type: object
+      properties:
+        b64_json:
+          type: string
+        mimeType:
+          type: string
+      required:
+        - b64_json
+        - mimeType
+    GeminiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
